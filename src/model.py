@@ -23,3 +23,7 @@ class BoundingBoxModel(nn.Module):
         )
     def forward(self, x):
         return self.backbone(x)
+    
+def get_model(device):
+    model = BoundingBoxModel()
+    return model.to(device)
