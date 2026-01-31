@@ -21,3 +21,5 @@ class BoundingBoxModel(nn.Module):
             nn.Dropout(p=0.3),
             nn.Linear(256, 4)
         )
+    def forward(self, x):
+        return self.backbone(x)
