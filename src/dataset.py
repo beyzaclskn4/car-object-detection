@@ -38,3 +38,14 @@ class CarDataset(Dataset):
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image not found: {image_path}")
+
+if __name__ == "__main__":
+    dataset = CarDataset(
+        images_dir="data/train/images",
+        labels_csv="data/train/labels.csv"
+    )
+
+    img, target = dataset[0]
+    print(img.size)
+    print(target)
+    print("Dataset test tamamlandı.")
