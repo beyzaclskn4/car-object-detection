@@ -35,3 +35,6 @@ class CarDataset(Dataset):
             image = self.transform(image)
 
         return image, target
+
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image not found: {image_path}")
