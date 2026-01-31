@@ -73,3 +73,51 @@ model = model.to(DEVICE)
 # ========== LOSS & OPTIMIZER ==========
 criterion = nn.SmoothL1Loss()
 optimizer = optim.Adam(model.parameters(), lr=LR)
+
+# ========== TRAIN & VALIDATION ==========
+best_val_loss = float("inf")
+
+for epoch in range(EPOCHS):
+    # ---- TRAIN ----
+    model.train()
+    train_loss = 0.0
+
+    for images, targets in train_loader:
+        images = images.to(DEVICE)
+        bboxes = targets["bbox"].to(DEVICE)
+
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, bboxes)
+        loss.backward()
+        optimizer.step()
+
+        train_loss += loss.item()
+
+    train_loss /= len(train_loader)
+
+    # ---- VALIDATION ----
+    model.eval()
+    val_loss = 0.0
+
+    with torch.no_grad():
+        for images, targets in val_loader:
+            images = images.to(DEVICE)
+            bboxes = targets["bbox"].to(DEVICE)
+
+            outputs = model(images)
+            loss = criterion(outputs, bboxes)
+            val_loss += loss.item()
+
+    val_loss /= len(val_loader)
+
+    print(
+        f"Epoch [{epoch+1}/{EPOCHS}] "
+        f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}"
+    )
+
+    # ---- SAVE BEST MODEL ----
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        torch.save(model.state_dict(), MODEL_SAVE_PATH)
+        print("✅ Best model saved")
