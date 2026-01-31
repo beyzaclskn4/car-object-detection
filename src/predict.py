@@ -1,17 +1,26 @@
+import os
 import torch
 import cv2
 from torchvision import transforms
 
 from model import get_model
+import os
+
+# ========== DEVICE ==========
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_PATH = "weights/best_model.pth"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "experiments", "best_model.pth")
+
+print("MODEL PATH:", MODEL_PATH)
+# ========== IMAGE ==========
 IMAGE_SIZE = 224
 
 transform = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
     transforms.ToTensor(),
-    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE))
 ])
 
 def load_model():
@@ -24,20 +33,38 @@ def predict_bbox(model, image_path):
     image = cv2.imread(image_path)
     h, w, _ = image.shape
 
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+    image_tensor = transform(image).unsqueeze(0).to(DEVICE)
+
+    with torch.no_grad():
+        preds = model(image_tensor)
+        print("RAW MODEL OUTPUT:", preds)
+
+    return preds, image
+def predict_bbox(model, image_path):
+    image = cv2.imread(image_path)
+
+    if image is None:
+        raise ValueError("Image not found! Path yanlış.")
+
+    h, w, _ = image.shape
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
     image_tensor = transform(image_rgb).unsqueeze(0).to(DEVICE)
 
     with torch.no_grad():
-        bbox = model(image_tensor)[0].cpu().numpy()
+        preds = model(image_tensor)
+        print("RAW MODEL OUTPUT:", preds)
 
-    x1, y1, x2, y2 = bbox
+    # 🔽 tensor → numpy → flatten
+    bbox = preds.squeeze().cpu().numpy()
 
-    x1 = int(x1 * w)
-    y1 = int(y1 * h)
-    x2 = int(x2 * w)
-    y2 = int(y2 * h)
+    x1, y1, x2, y2 = map(int, bbox)
+
 
     return (x1, y1, x2, y2), image
+
 
 def draw_bbox(image, bbox):
     x1, y1, x2, y2 = bbox

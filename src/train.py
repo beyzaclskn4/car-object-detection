@@ -1,20 +1,21 @@
 import torch
 from torch.utils.data import DataLoader
-from torchvision import models, transforms
+from torchvision import transforms
 import torch.nn as nn
 import torch.optim as optim
 from dataset import CarDataset
 import os
+from model import get_model
 
 
 # ========== CONFIG ==========
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-TRAIN_CSV = "data/train/labels.csv"
-VAL_CSV = "data/val/labels.csv"
+TRAIN_CSV = "../data/train/labels.csv"
+VAL_CSV   = "../data/val/labels.csv"
 
-TRAIN_IMG_DIR = "data/train/images"
-VAL_IMG_DIR = "data/val/images"
+TRAIN_IMG_DIR = "../data/train/images"
+VAL_IMG_DIR   = "../data/val/images"
 
 BATCH_SIZE = 32
 EPOCHS = 30
@@ -35,16 +36,17 @@ transform = transforms.Compose([
 
 # ========== DATASET & DATALOADER ==========
 train_dataset = CarDataset(
-    csv_path=TRAIN_CSV,
-    img_dir=TRAIN_IMG_DIR,
+    images_dir=TRAIN_IMG_DIR,
+    labels_csv=TRAIN_CSV,
     transform=transform
 )
 
 val_dataset = CarDataset(
-    csv_path=VAL_CSV,
-    img_dir=VAL_IMG_DIR,
+    images_dir=VAL_IMG_DIR,
+    labels_csv=VAL_CSV,
     transform=transform
 )
+
 
 train_loader = DataLoader(
     train_dataset,
@@ -58,10 +60,7 @@ val_loader = DataLoader(
     shuffle=False
 )
 
-# ========== MODEL ==========
-model = models.resnet18(weights="IMAGENET1K_V1")
-model.fc = nn.Linear(model.fc.in_features, 4)
-model = model.to(DEVICE)
+model = get_model(DEVICE)
 
 # ========== LOSS & OPTIMIZER ==========
 criterion = nn.SmoothL1Loss()
@@ -75,9 +74,9 @@ for epoch in range(EPOCHS):
     model.train()
     train_loss = 0.0
 
-    for images, targets in train_loader:
+    for images, bboxes in train_loader:
         images = images.to(DEVICE)
-        bboxes = targets["bbox"].to(DEVICE)
+        bboxes = bboxes.to(DEVICE)
 
         optimizer.zero_grad()
         outputs = model(images)
@@ -94,9 +93,10 @@ for epoch in range(EPOCHS):
     val_loss = 0.0
 
     with torch.no_grad():
-        for images, targets in val_loader:
+        for images, bboxes in val_loader:
             images = images.to(DEVICE)
-            bboxes = targets["bbox"].to(DEVICE)
+            bboxes = bboxes.to(DEVICE)
+
 
             outputs = model(images)
             loss = criterion(outputs, bboxes)
