@@ -65,3 +65,11 @@ val_loader = DataLoader(
     shuffle=False
 )
 
+# ========== MODEL ==========
+model = models.resnet18(weights="IMAGENET1K_V1")
+model.fc = nn.Linear(model.fc.in_features, 4)
+model = model.to(DEVICE)
+
+# ========== LOSS & OPTIMIZER ==========
+criterion = nn.SmoothL1Loss()
+optimizer = optim.Adam(model.parameters(), lr=LR)
