@@ -1,0 +1,13 @@
+# Generated datasets
+data/
+
+# Raw datasets (Kaggle)
+training_images/
+testing_images/
+
+# Models
+*.pth
+*.pt
+
+# Python
+__pycache__/
