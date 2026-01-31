@@ -38,3 +38,19 @@ def predict_bbox(model, image_path):
     y2 = int(y2 * h)
 
     return (x1, y1, x2, y2), image
+
+def draw_bbox(image, bbox):
+    x1, y1, x2, y2 = bbox
+    cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    return image
+
+
+if __name__ == "__main__":
+    model = load_model()
+
+    bbox, image = predict_bbox(model, "test.jpg")
+    result = draw_bbox(image, bbox)
+
+    cv2.imshow("Prediction", result)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
